@@ -8,11 +8,11 @@ import shutil
 from PromptEngine import PEngine
 
 # Config для подключения к ЯЗ модели
-model_api = 'http://84.201.152.196:8020/v1/completions'
-api_key = "Wy8A2WGuAEubift1OLuTXnHtfAQkvFEK"
+model_api = '<Yout input>'
+api_key = "<Yout input>"
 
 # Замените 'YOUR_TOKEN' на токен вашего бота
-API_TOKEN = '7870192832:AAFE1ZsjBkHsi1gRqeVsDXBrowzDveU7Jws'
+API_TOKEN = '<Yout input>'
 bot = AsyncTeleBot(API_TOKEN)
 
 propmt_engine = PEngine(model_api, api_key,)
