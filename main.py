@@ -19,7 +19,7 @@ propmt_engine = PEngine(model_api, api_key,)
 
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message):
-    text= "Привет! Я EvrazGPT! Я могу ответить на различные вопросы ). Также я умею делать Code Review проекта на python. Просто отправте мне фаил и отвечу, где у вас ошибки"
+    text= "Привет! Я EvrazGPT! Я могу ответить на различные вопросы ). Также я умею делать Code Review проекта на python. Просто отправте мне фаил .zip проекта и отвечу, где у вас ошибки"
     await bot.reply_to(message=message, text=text, parse_mode='Markdown')
 
 
@@ -29,12 +29,10 @@ async def handle_text(message):
     sent_message = await bot.send_message(chat_id=message.chat.id, text=wait_text, parse_mode='Markdown')
     try:
         content = propmt_engine.custom_query(message.text)
-
         await bot.delete_message(message.chat.id, sent_message.message_id)
         await bot.send_message(chat_id=message.chat.id, text=content, parse_mode='Markdown')
     except Exception as e:
-        print(e)
-        await bot.send_message(message.chat.id, f"(1) Произошла ошибка: {e}. Попробуйте снова.")
+        await bot.send_message(message.chat.id, f"(1) Произошла ошибка: *{e}*. Попробуйте снова.", "Markdown")
 
 
 async def unzip_file(zip_filepath, extract_dir):
@@ -42,20 +40,48 @@ async def unzip_file(zip_filepath, extract_dir):
         zf.extractall(extract_dir)
 
 
-async def walk_directory(directory: str):
-    """Рекурсивно обходит дерево директорий и возвращает его в виде словаря."""
-    tree = {}
-    for root, dirs, files in os.walk(directory):
-        # Определяем текущий узел в дереве
-        current_node = tree
-        path_parts = root[len(directory):].strip(os.sep).split(os.sep)
-        for part in path_parts:
-            if part not in current_node:
-                current_node[part] = {}
-            current_node = current_node[part]
-        # Добавляем файлы в текущий узел
-        current_node["files"] = files
-    return tree
+# async def walk_directory(directory: str):
+#     """Рекурсивно обходит дерево директорий и возвращает его в виде словаря."""
+#     tree = {}
+#     for root, dirs, files in os.walk(directory):
+#         # Определяем текущий узел в дереве
+#         current_node = tree
+#         path_parts = root[len(directory):].strip(os.sep).split(os.sep)
+#         for part in path_parts:
+#             if part not in current_node:
+#                 current_node[part] = {}
+#             current_node = current_node[part]
+#         # Добавляем файлы в текущий узел
+#         current_node["files"] = files
+#     return tree
+
+async def walk_directory(directory: str, indent=0):
+    """Возвращает структуру проекта по заданному пути в виде текста."""
+    structure = ""
+    
+    try:
+        # Получаем список файлов и папок в указанном каталоге
+        items = os.listdir(directory)
+        
+        # Сортируем элементы для более удобного отображения
+        items.sort()
+        
+        for item in items:
+            # Формируем полный путь к элементу
+            full_path = os.path.join(directory, item)
+            
+            # Добавляем имя элемента с отступами в структуру
+            structure += ' ' * indent + '|-- ' + item + '\n'
+            
+            # Если это папка, рекурсивно вызываем функцию
+            if os.path.isdir(full_path):
+                structure += await walk_directory(full_path, indent + 4)
+    except PermissionError:
+        structure += ' ' * indent + '|-- [Permission Denied]\n'
+    except FileNotFoundError:
+        structure += ' ' * indent + '|-- [File Not Found]\n'
+    
+    return structure
 
 
 def is_zip_file(filename):
@@ -83,12 +109,21 @@ async def handle_codes(message):
         await bot.reply_to(message, "Простите, это не *.zip* файл")
         await shutil.rmtree(temp_dir, ignore_errors=True) 
     else:
-        await bot.delete_message(message.chat.id, sent_message.message_id)
-        await unzip_file(file_path, temp_dir)
-        os.remove(file_path)
-        project_file = os.path.join(temp_dir, os.listdir(temp_dir)[0])
-        tree = await walk_directory(project_file)
-        await bot.reply_to(message, tree)
+        try:
+            if sent_message.reply_to_message:
+                await bot.delete_message(message.chat.id, sent_message.message_id)
+
+            await unzip_file(file_path, temp_dir)
+            os.remove(file_path)
+            project_file = os.path.join(temp_dir, os.listdir(temp_dir)[0])
+            tree = await walk_directory(project_file)
+        
+            content = propmt_engine.check_main_structure_dir(tree)
+            await bot.delete_message(message.chat.id, sent_message.message_id)
+            await bot.send_message(chat_id=message.chat.id, text=content, parse_mode='Markdown')
+        except Exception as e:
+            await bot.send_message(message.chat.id, f"(2) Произошла ошибка: *{e}*. Попробуйте снова.", 'Markdown')
+
         shutil.rmtree(temp_dir, ignore_errors=True) 
 
 
