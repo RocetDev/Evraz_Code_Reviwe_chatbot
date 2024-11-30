@@ -8,8 +8,8 @@ import shutil
 from PromptEngine import PEngine
 
 # Config для подключения к ЯЗ модели
-model_api = '<Yout input>'
-api_key = "<Yout input>"
+model_api = '<Your input>'
+api_key = "<Your input>"
 
 # Замените 'YOUR_TOKEN' на токен вашего бота
 API_TOKEN = '<Yout input>'
@@ -17,9 +17,24 @@ bot = AsyncTeleBot(API_TOKEN)
 
 propmt_engine = PEngine(model_api, api_key,)
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['start'])
 async def send_welcome(message):
-    text= "Привет! Я EvrazGPT! Я могу ответить на различные вопросы ). Также я умею делать Code Review проекта на python. Просто отправте мне фаил .zip проекта и отвечу, где у вас ошибки"
+    text= "Привет! Я EvrazGPT! Я могу ответить на различные вопросы ). \
+    Также я умею делать **__Code Review__** проекта на python. Просто отправте мне фаил `.zip` проекта и отвечу, где у вас ошибки. \
+    Если вам до сих пор не понятно, что нужно сделать - напишите /help"
+    await bot.reply_to(message=message, text=text, parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['help'])
+async def send_help_message(message):
+    text = '''
+Основной целью чат бота является анализ архитектурных нарушений при разработке проектов на Python.
+Стандарты взяты из файла `Руководство Python` от компании ЕВРАЗ.
+Чтобы я мог произвести анализ проекта мне нужно, чтобы вы отправили его в виде .zip архива. Без текста, без картинок, просто zip архив проекта.
+Но, вы также можете просто общатся со мной на разные темы ) А я попытаюсь поддержать диалог в зависимости от своих возможностей.
+
+ВНИМАНИЕ: Я могу нести бред, не доверяйте мне полностью. Я глупая нейронная сеть. Если вы хотите узнать достоверные исторические факты и т.п. то обратитесть в Yandex или Google поиск.
+'''
     await bot.reply_to(message=message, text=text, parse_mode='Markdown')
 
 
