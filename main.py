@@ -8,11 +8,11 @@ import shutil
 from PromptEngine import PEngine
 
 # Config для подключения к ЯЗ модели
-model_api = '<Your input>'
-api_key = "<Your input>"
+model_api = 'http://84.201.152.196:8020/v1/completions'
+api_key = "Wy8A2WGuAEubift1OLuTXnHtfAQkvFEK"
 
 # Замените 'YOUR_TOKEN' на токен вашего бота
-API_TOKEN = '<Yout input>'
+API_TOKEN = '7870192832:AAFPX_JaK6iFGLXZrWSkukSakCvCHPC7ZuA'
 bot = AsyncTeleBot(API_TOKEN)
 
 propmt_engine = PEngine(model_api, api_key,)
@@ -109,6 +109,9 @@ async def handle_codes(message):
     file_name = message.document.file_name
     file_info = await bot.get_file(message.document.file_id)
     downloaded_file = await bot.download_file(file_info.file_path)
+
+    if "FILES" not in os.listdir():
+        os.mkdir('FILES')
 
     # Сохраняем файл во временной директории
     temp_dir = tempfile.mkdtemp(dir='FILES/')
