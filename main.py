@@ -1,9 +1,5 @@
-import telebot
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
-import requests
-import json
-import glob
 import zipfile
 import os
 import tempfile
@@ -11,42 +7,34 @@ import shutil
 
 from PromptEngine import PEngine
 
-
-# https://habr.com/ru/companies/skillfactory/articles/837366/
-
-
 # Config для подключения к ЯЗ модели
-model_api = '<Your url>'
-api_key = "<Your api key>"
+model_api = 'http://84.201.152.196:8020/v1/completions'
+api_key = "Wy8A2WGuAEubift1OLuTXnHtfAQkvFEK"
 
 # Замените 'YOUR_TOKEN' на токен вашего бота
-API_TOKEN = '<Your token>'
+API_TOKEN = '7870192832:AAFE1ZsjBkHsi1gRqeVsDXBrowzDveU7Jws'
 bot = AsyncTeleBot(API_TOKEN)
 
 propmt_engine = PEngine(model_api, api_key,)
 
-
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message):
-    text= "Привет! Отправь мне текстовый файл, и я его проанализирую."
+    text= "Привет! Я EvrazGPT! Я могу ответить на различные вопросы ). Также я умею делать Code Review проекта на python. Просто отправте мне фаил и отвечу, где у вас ошибки"
     await bot.reply_to(message=message, text=text, parse_mode='Markdown')
 
 
 @bot.message_handler(content_types=['text'])
 async def handle_text(message):
-    
-
     wait_text = "⏳ Подождите...  💭 Что-бот *EvraszGPT* генерирует ответ на ваш запрос..."
-    await bot.send_message(chat_id=message.chat.id, text=wait_text, parse_mode='Markdown')
-
+    sent_message = await bot.send_message(chat_id=message.chat.id, text=wait_text, parse_mode='Markdown')
     try:
         content = propmt_engine.custom_query(message.text)
 
-        await bot.delete_message(message.chat.id, message.message_id+1)
+        await bot.delete_message(message.chat.id, sent_message.message_id)
         await bot.send_message(chat_id=message.chat.id, text=content, parse_mode='Markdown')
-    except Exception:
-        await bot.delete_message(message.chat.id, message.message_id+1)
-        await bot.send_message(message.chat.id, "Простите. Произошла ошибка, попробуйте снова.")
+    except Exception as e:
+        print(e)
+        await bot.send_message(message.chat.id, f"(1) Произошла ошибка: {e}. Попробуйте снова.")
 
 
 async def unzip_file(zip_filepath, extract_dir):
@@ -88,21 +76,20 @@ async def handle_codes(message):
         f.write(downloaded_file)
     
     wait_text = "⏳ Подождите...  💭 Что-бот *EvraszGPT* генерирует ответ на ваш запрос..."
-    await bot.send_message(chat_id=message.chat.id, text=wait_text, parse_mode='Markdown')
+    sent_message = await bot.send_message(chat_id=message.chat.id, text=wait_text, parse_mode='Markdown')
 
     if not is_zip_file(file_name):
-        await bot.delete_message(message.chat.id, message.message_id+1)
-
+        await bot.delete_message(message.chat.id, sent_message.message_id)
         await bot.reply_to(message, "Простите, это не *.zip* файл")
         await shutil.rmtree(temp_dir, ignore_errors=True) 
     else:
-        await bot.delete_message(message.chat.id, message.message_id+1)
-
+        await bot.delete_message(message.chat.id, sent_message.message_id)
         await unzip_file(file_path, temp_dir)
         os.remove(file_path)
         project_file = os.path.join(temp_dir, os.listdir(temp_dir)[0])
         tree = await walk_directory(project_file)
         await bot.reply_to(message, tree)
+        shutil.rmtree(temp_dir, ignore_errors=True) 
 
 
 if __name__ == '__main__':

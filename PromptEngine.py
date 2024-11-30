@@ -51,15 +51,4 @@ class PEngine:
         return content
 
     def check_structure_dir(self, directory):
-        expected_files = ["requirements.txt", "README.md"]
-        actual_files = os.listdir(directory)
-
-        missing_files = set(expected_files) - set(actual_files)
-        extra_files = set(actual_files) - set(expected_files)
-
-        report = {
-            "missing_files": list(missing_files),
-            "extra_files": list(extra_files)
-        }
-
-        return report
+        pass
